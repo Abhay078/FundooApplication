@@ -15,5 +15,6 @@ namespace RepositoryLayer.FundooDBContext
          }
         public DbSet<UserEntity> User { get; set; }
         public DbSet<NotesEntity> Notes { get; set; }
+        public DbSet<CollabEntity> Collab { get; set; }
     }
 }
