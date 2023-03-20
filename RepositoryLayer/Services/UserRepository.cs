@@ -123,34 +123,7 @@ namespace RepositoryLayer.Services
 
         }
 
-        public IEnumerable<UserEntity> GetAllUser()
-        {
-            try
-            {
-                return context.User;
-
-            }
-            catch(Exception ex)
-            {
-                return null;
-            }
-            
-        }
-
-        public UserEntity GetUserById(long id)
-        {
-            try
-            {
-                return context.User.FirstOrDefault(x => x.UserId == id);
-
-            }
-            catch(Exception ex)
-            {
-                return null;
-            }
-            
-
-        }
+        
 
         public string ForgetPassword(string email)
         {

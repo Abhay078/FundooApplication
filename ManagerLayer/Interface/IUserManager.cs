@@ -12,8 +12,7 @@ namespace ManagerLayer.Interface
         public UserEntity Login(LoginModel model);
         public string Generate(string Email, long Userid);
 
-        public IEnumerable<UserEntity> GetAllUser();
-        public UserEntity GetUserById(long id);
+       
 
         public string ForgetPassword(string email);
         public bool ResetPassword(ResetPasswordModel ResetModel,string email);

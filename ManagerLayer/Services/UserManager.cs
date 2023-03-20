@@ -27,15 +27,7 @@ namespace ManagerLayer.Services
         {
             return repository.Generate(Email, Userid);
         }
-        public IEnumerable<UserEntity> GetAllUser()
-        {
-            return repository.GetAllUser();
-        }
-
-        public UserEntity GetUserById(long id)
-        {
-            return repository.GetUserById(id);
-        }
+        
 
         public string ForgetPassword(string email)
         {
