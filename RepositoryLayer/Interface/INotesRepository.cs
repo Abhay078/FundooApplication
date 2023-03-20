@@ -21,5 +21,7 @@ namespace RepositoryLayer.Interface
 
         public NotesEntity ColorNote(long Noteid, long UserId, string Color);
         public NotesEntity Image(IFormFile Image, long Noteid, long UserId);
+        public IEnumerable<NotesEntity> RetrieveMatching(string Keyword,long UserId,out int count);
+        public List<NotesEntity> Pagination(string Keyword, int pageNo, int pageSize,long UserId);
     }
 }
