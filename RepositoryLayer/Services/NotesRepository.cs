@@ -2,56 +2,53 @@
 using CloudinaryDotNet.Actions;
 using CommonLayer.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.Extensions.Configuration;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using RepositoryLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace RepositoryLayer.Services
 {
-    public class NotesRepository:INotesRepository
+    public class NotesRepository : INotesRepository
     {
         private readonly FunContext context;
         private readonly Cloudinary cloudinary;
-        
-        public NotesRepository(FunContext context,Cloudinary cloudinary)
-        { 
+
+        public NotesRepository(FunContext context, Cloudinary cloudinary)
+        {
             this.context = context;
-            this.cloudinary= cloudinary;
-            
+            this.cloudinary = cloudinary;
+
         }
-        
-        public NotesEntity CreateNote(CreateNoteModel model,long UserId)
+
+        public NotesEntity CreateNote(CreateNoteModel model, long UserId)
         {
             try
             {
                 NotesEntity entity = new NotesEntity();
                 entity.Title = model.Title;
-                entity.Description=model.Description;
-                entity.Reminder= model.Reminder;
-                entity.Archived= model.Archived;
-                entity.IsPinned= model.IsPinned;
-                
-                entity.Trash= model.Trash;
-                entity.Created=DateTime.Now;
-                entity.Edited=DateTime.Now;
-                
+                entity.Description = model.Description;
+                entity.Reminder = model.Reminder;
+                entity.Archived = model.Archived;
+                entity.IsPinned = model.IsPinned;
+
+                entity.Trash = model.Trash;
+                entity.Created = DateTime.Now;
+                entity.Edited = DateTime.Now;
+
                 entity.UserId = UserId;
-                 
+
                 var Check = context.Notes.Add(entity);
-                if(Check != null)
+                if (Check != null)
                 {
                     context.SaveChanges();
                     return entity;
 
                 }
                 return null;
-                
+
 
 
             }
@@ -74,10 +71,10 @@ namespace RepositoryLayer.Services
 
                 throw;
             }
-            
+
         }
 
-        public NotesEntity GetNoteById(long Noteid,long UserId)
+        public NotesEntity GetNoteById(long Noteid, long UserId)
         {
             try
             {
@@ -96,15 +93,15 @@ namespace RepositoryLayer.Services
             }
         }
 
-        public NotesEntity UpdateNote(UpdateNoteModel model,long Noteid,long UserId)
+        public NotesEntity UpdateNote(UpdateNoteModel model, long Noteid, long UserId)
         {
             try
             {
-                var Check = context.Notes.FirstOrDefault(o=>o.NoteId== Noteid);
+                var Check = context.Notes.FirstOrDefault(o => o.NoteId == Noteid);
                 if (Check != null)
                 {
-                    Check.Title= model.Title;
-                    Check.Description= model.Description;
+                    Check.Title = model.Title;
+                    Check.Description = model.Description;
                     Check.Edited = DateTime.Now;
                     context.SaveChanges();
                     return Check;
@@ -121,11 +118,11 @@ namespace RepositoryLayer.Services
             }
         }
 
-        public bool DeleteNote(long Noteid,long UserId)
+        public bool DeleteNote(long Noteid, long UserId)
         {
             try
             {
-                var Check = context.Notes.FirstOrDefault(o=>o.NoteId== Noteid); 
+                var Check = context.Notes.FirstOrDefault(o => o.NoteId == Noteid);
                 if (Check != null)
                 {
                     context.Notes.Remove(Check);
@@ -142,11 +139,11 @@ namespace RepositoryLayer.Services
             }
         }
 
-        public NotesEntity ArchieveNote(long Noteid,long UserId)
+        public NotesEntity ArchieveNote(long Noteid, long UserId)
         {
             try
             {
-                var Check = context.Notes.FirstOrDefault(o=>o.NoteId== Noteid);
+                var Check = context.Notes.FirstOrDefault(o => o.NoteId == Noteid);
                 if (Check != null)
                 {
                     bool value = Check.Archived;
@@ -156,7 +153,7 @@ namespace RepositoryLayer.Services
                     }
                     else
                     {
-                        Check.Archived= true;
+                        Check.Archived = true;
                     }
                     context.SaveChanges();
                 }
@@ -225,15 +222,15 @@ namespace RepositoryLayer.Services
                 throw;
             }
         }
-        public NotesEntity ColorNote(long Noteid, long UserId,string Color)
+        public NotesEntity ColorNote(long Noteid, long UserId, string Color)
         {
             try
             {
-                var Check = context.Notes.FirstOrDefault(o=>o.NoteId== Noteid);
-                if(Check!=null)
+                var Check = context.Notes.FirstOrDefault(o => o.NoteId == Noteid);
+                if (Check != null)
                 {
                     Check.BackgroundColor = Color;
-                    Check.Edited=DateTime.Now;
+                    Check.Edited = DateTime.Now;
                     context.SaveChanges();
                     return Check;
                 }
@@ -248,7 +245,7 @@ namespace RepositoryLayer.Services
             }
         }
 
-        public NotesEntity Image(IFormFile image,long Noteid, long UserId)
+        public NotesEntity Image(IFormFile image, long Noteid, long UserId)
         {
             try
             {
@@ -267,7 +264,7 @@ namespace RepositoryLayer.Services
                             uploadResult = cloudinary.Upload(uploadParamns);
                         }
                     }
-                    Check.Image= uploadResult.SecureUrl.AbsoluteUri;
+                    Check.Image = uploadResult.SecureUrl.AbsoluteUri;
                     Check.Edited = DateTime.Now;
                     context.SaveChanges();
                     return Check;
@@ -275,7 +272,7 @@ namespace RepositoryLayer.Services
 
                 }
                 return null;
-                
+
 
 
             }
@@ -285,5 +282,55 @@ namespace RepositoryLayer.Services
                 throw;
             }
         }
+        public IEnumerable<NotesEntity> RetrieveMatching(string Keyword, long UserId,out int count)
+        {
+            try
+            {
+
+                //(1+2)*3
+                IEnumerable<NotesEntity> Check = context.Notes.Where(o => (o.Description.Contains(Keyword) || o.Title.Contains(Keyword)) && o.UserId == UserId);
+                if (Check.Any())
+                {
+                    count = Check.Count();
+                 
+                    return Check;
+                }
+                else
+                {
+                    count = 0;
+                    return null;
+
+                }
+                
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        public List<NotesEntity> Pagination(string Keyword, int pageNo, int pageSize, long UserId)
+        {
+            try
+            {
+                List<NotesEntity> Check = context.Notes.Where(o => (o.Description.Contains(Keyword) || o.Title.Contains(Keyword)) && o.UserId == UserId)
+                    .Skip(pageSize * (pageNo - 1))
+                    .Take(pageSize).ToList();
+                if (Check.Any())
+                {
+                    return Check;
+                }
+                return null;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
     }
 }
