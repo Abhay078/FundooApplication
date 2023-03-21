@@ -3,8 +3,16 @@ using ManagerLayer.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -13,9 +21,13 @@ namespace FundooNotesApplication.Controllers
     public class CollabController : ControllerBase
     {
         private readonly ICollabManager manager;
-        public CollabController(ICollabManager manager)
+        private readonly IDistributedCache distributedCache;
+        private readonly IMemoryCache memoryCache;
+        public CollabController(ICollabManager manager,IMemoryCache memoryCache,IDistributedCache distributedCache)
         {
             this.manager = manager;
+            this.distributedCache = distributedCache;
+            this.memoryCache= memoryCache;
         }
         [Authorize]
         [HttpPost]
@@ -47,8 +59,28 @@ namespace FundooNotesApplication.Controllers
         public ActionResult GetAllCollab()
         {
             var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-            var Check = manager.GetAllCollab(UserId);
-            if (Check != null)
+
+            var cacheKey = "collabList";
+            IEnumerable<CollabEntity> Check;
+            string serializedCollabList;
+            var redisLabelList = distributedCache.Get(cacheKey);
+            if (redisLabelList != null)
+            {
+                serializedCollabList=Encoding.UTF8.GetString(redisLabelList);
+                Check=JsonConvert.DeserializeObject<IEnumerable<CollabEntity>>(serializedCollabList);
+            }
+            else
+            {
+                Check = manager.GetAllCollab(UserId);
+                serializedCollabList=JsonConvert.SerializeObject(Check);
+                redisLabelList = Encoding.UTF8.GetBytes(serializedCollabList);
+                var options=new DistributedCacheEntryOptions()
+                    .SetAbsoluteExpiration(DateTime.Now.AddMinutes(20))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(1));
+                distributedCache.Set(cacheKey,redisLabelList, options);
+
+            }
+            if (Check.Any())
             {
                 return Ok(Check);
             }
