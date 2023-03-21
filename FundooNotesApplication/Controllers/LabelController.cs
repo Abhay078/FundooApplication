@@ -5,10 +5,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -16,18 +22,22 @@ namespace FundooNotesApplication.Controllers
     [ApiController]
     public class LabelController : ControllerBase
     {
+        private readonly IMemoryCache memoryCache;
         private readonly ILabelManager manager;
-        public LabelController(ILabelManager manager)
+        private readonly IDistributedCache distributedCache;
+        public LabelController(ILabelManager manager,IMemoryCache memoryCache,IDistributedCache distributedCache)
         {
+            this.memoryCache = memoryCache;
+            this.distributedCache = distributedCache;
             this.manager = manager;
         }
         [Authorize]
-        [HttpPost("{NoteId}/{LabelName}")]
+        [HttpPost]
 
-        public ActionResult AddLabel(string LabelName, long NoteId)
+        public ActionResult AddLabel(LabelModel model)
         {
             long UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-            var Check = manager.AddLabel(UserId, NoteId, LabelName);
+            var Check = manager.AddLabel(UserId,model);
             if (Check != null)
             {
                 return Ok(new ResponseModel<LabelEntity> { Status = true, Message = "Label is created successfully", Data = Check });
@@ -41,17 +51,37 @@ namespace FundooNotesApplication.Controllers
         }
         [Authorize]
         [HttpGet]
-        public IActionResult GetLabels()
+        public async Task<IActionResult> GetLabels()
         {
             long UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-            var Check = manager.GetAll(UserId);
-            if (Check != null)
+
+            var cacheKey = "LabelList";
+            string serializedLabel;
+            IEnumerable<LabelEntity> Check;
+            var redisLabelList = await distributedCache.GetAsync(cacheKey);
+            if(redisLabelList != null)
+            {
+                serializedLabel = Encoding.UTF8.GetString(redisLabelList);
+                Check=JsonConvert.DeserializeObject <IEnumerable<LabelEntity>>(serializedLabel);
+            }
+            else
+            {
+                Check = manager.GetAll(UserId);
+                serializedLabel = JsonConvert.SerializeObject(Check);
+                redisLabelList = Encoding.UTF8.GetBytes(serializedLabel);
+                var options = new DistributedCacheEntryOptions()
+                    .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                await distributedCache.SetAsync(cacheKey, redisLabelList, options);
+
+            }
+            if (Check.Any())
             {
                 return Ok(new ResponseModel<IEnumerable<LabelEntity>> { Status = true, Message = "All Label is Retrieved", Data = Check });
             }
             else
             {
-                return BadRequest(new ResponseModel<IEnumerable<LabelEntity>> { Status = false, Message = "All Label is Retrieved", Data = Check });
+                return BadRequest(new ResponseModel<IEnumerable<LabelEntity>> { Status = false, Message = "Failed to retrived", Data = Check });
             }
         }
         [Authorize]
