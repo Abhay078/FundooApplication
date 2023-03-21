@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using System;
@@ -14,6 +17,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -22,10 +26,13 @@ namespace FundooNotesApplication.Controllers
     public class NotesController : ControllerBase
     {
         private readonly INoteManager manager;
-        public NotesController(INoteManager manager)
+        private readonly IMemoryCache memoryCache;
+        private readonly IDistributedCache distributedCache;
+        public NotesController(INoteManager manager,IMemoryCache memoryCache,IDistributedCache distributedCache)
         {
             this.manager = manager;
-
+            this.distributedCache=distributedCache;
+            this.memoryCache=memoryCache;
         }
         [Authorize]
         [HttpPost]
@@ -57,8 +64,27 @@ namespace FundooNotesApplication.Controllers
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-                var Check = manager.GetAllNote(UserId);
-                if (Check != null)
+                var Key = "NoteList";
+                string serializedList;
+                IEnumerable<NotesEntity> Check;
+                var redisList = distributedCache.Get(Key);
+                if (redisList != null)
+                {
+                    serializedList = Encoding.UTF8.GetString(redisList);
+                    Check=JsonConvert.DeserializeObject<IEnumerable<NotesEntity>>(serializedList);
+                }
+                else
+                {
+                    Check = manager.GetAllNote(UserId);
+                    serializedList=JsonConvert.SerializeObject(Check);
+                    redisList=Encoding.UTF8.GetBytes(serializedList);
+                    var options = new DistributedCacheEntryOptions()
+                        .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(1));
+                    distributedCache.Set(Key,redisList, options);
+                }
+               
+                if (Check.Any())
                 {
                     return Ok(Check);
                 }
