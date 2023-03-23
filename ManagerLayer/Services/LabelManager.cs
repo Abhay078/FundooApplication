@@ -1,4 +1,5 @@
-﻿using ManagerLayer.Interface;
+﻿using CommonLayer.Model;
+using ManagerLayer.Interface;
 using RepositoryLayer.Entity;
 using RepositoryLayer.Interface;
 using RepositoryLayer.Services;
@@ -16,9 +17,9 @@ namespace ManagerLayer.Services
         {
             this.repository = repository;
         }
-        public LabelEntity AddLabel(long UserId, long NoteId, string LabelName)
+        public LabelEntity AddLabel(long UserId,LabelModel model)
         {
-            return repository.AddLabel(UserId, NoteId, LabelName);
+            return repository.AddLabel(UserId,model);
         }
         public IEnumerable<LabelEntity> GetAll(long UserId)
         {

@@ -1,23 +1,17 @@
-﻿using CloudinaryDotNet;
-using CloudinaryDotNet.Actions;
-using CommonLayer.Model;
+﻿using CommonLayer.Model;
 using ManagerLayer.Interface;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RepositoryLayer.Entity;
-using RepositoryLayer.FundooDBContext;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -26,13 +20,12 @@ namespace FundooNotesApplication.Controllers
     public class NotesController : ControllerBase
     {
         private readonly INoteManager manager;
-        private readonly IMemoryCache memoryCache;
         private readonly IDistributedCache distributedCache;
-        public NotesController(INoteManager manager,IMemoryCache memoryCache,IDistributedCache distributedCache)
+        public NotesController(INoteManager manager, IDistributedCache distributedCache)
         {
             this.manager = manager;
-            this.distributedCache=distributedCache;
-            this.memoryCache=memoryCache;
+            this.distributedCache = distributedCache;
+
         }
         [Authorize]
         [HttpPost]
@@ -71,25 +64,25 @@ namespace FundooNotesApplication.Controllers
                 if (redisList != null)
                 {
                     serializedList = Encoding.UTF8.GetString(redisList);
-                    Check=JsonConvert.DeserializeObject<IEnumerable<NotesEntity>>(serializedList);
+                    Check = JsonConvert.DeserializeObject<IEnumerable<NotesEntity>>(serializedList);
                 }
                 else
                 {
                     Check = manager.GetAllNote(UserId);
-                    serializedList=JsonConvert.SerializeObject(Check);
-                    redisList=Encoding.UTF8.GetBytes(serializedList);
+                    serializedList = JsonConvert.SerializeObject(Check);
+                    redisList = Encoding.UTF8.GetBytes(serializedList);
                     var options = new DistributedCacheEntryOptions()
                         .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
                         .SetSlidingExpiration(TimeSpan.FromMinutes(1));
-                    distributedCache.Set(Key,redisList, options);
+                    distributedCache.Set(Key, redisList, options);
                 }
-               
+
                 if (Check.Any())
                 {
                     return Ok(Check);
                 }
 
-                return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = $"Failed to get Data" });
+                return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Failed to get Data" });
 
             }
             catch (System.Exception)
@@ -101,12 +94,31 @@ namespace FundooNotesApplication.Controllers
         }
         [Authorize]
         [HttpGet("{id}")]
-        public ActionResult GetNotesById(long id)
+        public async Task<IActionResult> GetNotesById(long id)
         {
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-                var Check = manager.GetNoteById(id, UserId);
+                var Key = "NoteById";
+                string serializedList;
+                NotesEntity Check;
+                var redisList = await distributedCache.GetAsync(Key);
+                if (redisList != null)
+                {
+                    serializedList = Encoding.UTF8.GetString(redisList);
+                    Check = JsonConvert.DeserializeObject<NotesEntity>(serializedList);
+                }
+                else
+                {
+                    Check = manager.GetNoteById(id, UserId);
+                    serializedList = JsonConvert.SerializeObject(Check);
+                    redisList = Encoding.UTF8.GetBytes(serializedList);
+                    var options = new DistributedCacheEntryOptions()
+                        .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(1));
+                    distributedCache.Set(Key, redisList, options);
+                }
+
                 if (Check != null)
                 {
                     return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Successfull", Data = Check });
@@ -165,7 +177,7 @@ namespace FundooNotesApplication.Controllers
 
                 throw;
             }
-            
+
         }
         [Authorize]
         [HttpPut("Archieve{NoteId}")]
@@ -187,7 +199,7 @@ namespace FundooNotesApplication.Controllers
 
                 throw;
             }
-            
+
 
         }
 
@@ -211,7 +223,7 @@ namespace FundooNotesApplication.Controllers
 
                 throw;
             }
-           
+
 
         }
         [Authorize]
@@ -234,41 +246,51 @@ namespace FundooNotesApplication.Controllers
 
                 throw;
             }
-            
+
 
         }
 
         [Authorize]
         [HttpPut("Color{NoteId}")]
-        public ActionResult Color(long NoteId,string color) 
+        public ActionResult Color(long NoteId, string color)
         {
-            var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-            var Check = manager.ColorNote(NoteId, UserId, color);
-            if (Check != null)
+            try
             {
-                return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Color Changed", Data = Check });
+                var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
+                var Check = manager.ColorNote(NoteId, UserId, color);
+                if (Check != null)
+                {
+                    return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Color Changed", Data = Check });
+                }
+                return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occured", Data = Check });
+
             }
-            return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occured", Data = Check });
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
 
 
         }
         [Authorize]
         [HttpPost("Image{NoteId}")]
-        public ActionResult Image(long NoteId,IFormFile image)
+        public ActionResult Image(long NoteId, IFormFile image)
         {
 
 
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-                var Check = manager.Image(image,NoteId,UserId);
+                var Check = manager.Image(image, NoteId, UserId);
                 if (Check != null)
                 {
-                    return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Color Changed", Data =Check  });
+                    return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Color Changed", Data = Check });
                 }
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occured", Data = Check });
             }
-            catch(Exception) 
+            catch (Exception)
             {
                 throw;
 
@@ -283,16 +305,16 @@ namespace FundooNotesApplication.Controllers
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
                 int count;
-                var Check=manager.RetrieveMatching(Keyword,UserId,out count);
-                if (Check!=null)
+                var Check = manager.RetrieveMatching(Keyword, UserId, out count);
+                if (Check != null)
                 {
-                    return Ok(new ResponseModel<IEnumerable<NotesEntity>> { Status=true,Message="Data is Retrieved",Data=Check});
+                    return Ok(new ResponseModel<IEnumerable<NotesEntity>> { Status = true, Message = "Data is Retrieved", Data = Check });
                 }
                 else
                 {
-                    return BadRequest(new ResponseModel<IEnumerable<NotesEntity>> { Status = false, Message = "Notes not found ",Data=Check });
+                    return BadRequest(new ResponseModel<IEnumerable<NotesEntity>> { Status = false, Message = "Notes not found ", Data = Check });
                 }
-               
+
 
             }
             catch (Exception)
@@ -303,11 +325,12 @@ namespace FundooNotesApplication.Controllers
         }
         [HttpGet("Page/{Keyword}/{PageSize}/{PageNumber}")]
         [Authorize]
-        public ActionResult Pagination(string Keyword,int PageSize,int PageNumber) {
+        public ActionResult Pagination(string Keyword, int PageSize, int PageNumber)
+        {
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-                var Check=manager.Pagination(Keyword,PageNumber,PageSize,UserId);
+                var Check = manager.Pagination(Keyword, PageNumber, PageSize, UserId);
                 if (Check != null)
                 {
                     return Ok(new ResponseModel<IEnumerable<NotesEntity>> { Status = true, Message = "Data is Retrieved", Data = Check });

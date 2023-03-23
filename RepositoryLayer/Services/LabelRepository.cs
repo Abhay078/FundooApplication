@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Internal;
+﻿using CommonLayer.Model;
+using Microsoft.EntityFrameworkCore.Internal;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using RepositoryLayer.Interface;
@@ -16,17 +17,17 @@ namespace RepositoryLayer.Services
         {
             this.context = context;
         }
-        public LabelEntity AddLabel(long UserId,long NoteId,string LabelName)
+        public LabelEntity AddLabel(long UserId,LabelModel model)
         {
             LabelEntity labelEntity= new LabelEntity();
-            var Check = context.Label.FirstOrDefault(o => o.LabelName.ToLower().Equals(LabelName.ToLower()) && o.NoteId==NoteId);
+            var Check = context.Label.FirstOrDefault(o => o.LabelName.ToLower().Equals(model.LabelName.ToLower()) && o.NoteId==model.NoteId);
             if(Check != null)
             {
                 return null;
             }
             labelEntity.UserId = UserId;
-            labelEntity.NoteId = NoteId;
-            labelEntity.LabelName = LabelName;
+            labelEntity.NoteId = model.NoteId;
+            labelEntity.LabelName = model.LabelName;
             context.Add(labelEntity);
             context.SaveChanges();
             return labelEntity;

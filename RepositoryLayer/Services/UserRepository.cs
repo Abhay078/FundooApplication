@@ -1,13 +1,10 @@
 ﻿using CommonLayer.Model;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using RepositoryLayer.Interface;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -15,11 +12,11 @@ using System.Text;
 
 namespace RepositoryLayer.Services
 {
-    public class UserRepository:IUserRepository
+    public class UserRepository : IUserRepository
     {
         private readonly FunContext context;
         private IConfiguration _config;
-        public UserRepository(FunContext context,IConfiguration config)
+        public UserRepository(FunContext context, IConfiguration config)
         {
             this.context = context;
             _config = config;
@@ -46,17 +43,17 @@ namespace RepositoryLayer.Services
                 }
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return null;
             }
-            
+
         }
         public string EncryptPassword(string password)
         {
-            var PlainText=Encoding.UTF8.GetBytes(password);
-            var EncodedPass=Convert.ToBase64String(PlainText);
+            var PlainText = Encoding.UTF8.GetBytes(password);
+            var EncodedPass = Convert.ToBase64String(PlainText);
             return EncodedPass;
         }
         public UserEntity Login(LoginModel model)
@@ -79,13 +76,13 @@ namespace RepositoryLayer.Services
                 return null;
 
             }
-            catch(Exception ex )
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return null;
             }
 
-            
+
 
 
 
@@ -123,7 +120,7 @@ namespace RepositoryLayer.Services
 
         }
 
-        
+
 
         public string ForgetPassword(string email)
         {
@@ -145,25 +142,25 @@ namespace RepositoryLayer.Services
 
                 throw;
             }
-            
+
         }
 
-        public bool ResetPassword(ResetPasswordModel ResetModel,string email)
+        public bool ResetPassword(ResetPasswordModel ResetModel, string email)
         {
             try
             {
-                
+
                 if (ResetModel.NewPassword.Equals(ResetModel.ConfirmPassword))
                 {
-                   
+
                     var Check = context.User.FirstOrDefault(x => x.Email == email);
-                    if(Check != null)
+                    if (Check != null)
                     {
-                        Check.Password=EncryptPassword(ResetModel.NewPassword);
+                        Check.Password = EncryptPassword(ResetModel.NewPassword);
                         context.SaveChanges();
                         return true;
                     }
-                
+
                 }
                 return false;
 
@@ -173,9 +170,9 @@ namespace RepositoryLayer.Services
 
                 throw;
             }
-            
+
         }
     }
 
-    
+
 }

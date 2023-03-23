@@ -49,8 +49,6 @@ namespace RepositoryLayer.Services
                 }
                 return null;
 
-
-
             }
             catch (Exception)
             {
@@ -282,17 +280,17 @@ namespace RepositoryLayer.Services
                 throw;
             }
         }
-        public IEnumerable<NotesEntity> RetrieveMatching(string Keyword, long UserId,out int count)
+        public IEnumerable<NotesEntity> RetrieveMatching(string Keyword, long UserId, out int count)
         {
             try
             {
 
                 //(1+2)*3
-                IEnumerable<NotesEntity> Check = context.Notes.Where(o => (o.Description.Contains(Keyword) || o.Title.Contains(Keyword)) && o.UserId == UserId);
-                if (Check.Any())
+                var Check = context.Notes.Where(o => (o.Description.Contains(Keyword) || o.Title.Contains(Keyword)) && o.UserId == UserId).ToList();
+                if (Check.Count != 0)
                 {
                     count = Check.Count();
-                 
+
                     return Check;
                 }
                 else
@@ -301,7 +299,7 @@ namespace RepositoryLayer.Services
                     return null;
 
                 }
-                
+
 
             }
             catch (Exception)
