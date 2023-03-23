@@ -1,5 +1,6 @@
 ﻿using CommonLayer.Model;
 using ManagerLayer.Interface;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -20,12 +22,13 @@ namespace FundooNotesApplication.Controllers
     {
         private readonly ICollabManager manager;
         private readonly IDistributedCache distributedCache;
+        private readonly IBus bus;
 
-        public CollabController(ICollabManager manager, IDistributedCache distributedCache)
+        public CollabController(ICollabManager manager, IDistributedCache distributedCache, IBus bus)
         {
             this.manager = manager;
             this.distributedCache = distributedCache;
-
+            this.bus = bus;
         }
         [Authorize]
         [HttpPost]
@@ -48,6 +51,20 @@ namespace FundooNotesApplication.Controllers
                 throw;
             }
 
+        }
+        [HttpPost("Add")]
+        public async Task<IActionResult> AddCollabWithEmail(AddCollabModel model)
+        {
+            if (model != null)
+            {
+                
+                Uri url = new Uri("rabbitmq://localhost/CollabQueue");
+                var endPoint = await bus.GetSendEndpoint(url);
+                await endPoint.Send(model);
+                return Ok(new ResponseModel<string> { Status = true, Message = "Adding Successfull and an email will be sent to collaborator"});
+
+            }
+            return BadRequest(new ResponseModel<string> { Status = false, Message = "Adding Collaborator is failed " });
         }
         [Authorize]
         [HttpDelete("{NoteId}")]
