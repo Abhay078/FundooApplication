@@ -1,4 +1,5 @@
 ﻿using CommonLayer.Model;
+using FundooNotesApplication;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using RepositoryLayer.Interface;
@@ -31,7 +32,7 @@ namespace RepositoryLayer.Services
 
                 }
 
-                return null;
+                throw new KeyNotFoundException("NoteId not found");
 
             }
             catch (System.Exception)
@@ -55,7 +56,7 @@ namespace RepositoryLayer.Services
                     context.SaveChanges();
                     return Check;
                 }
-                return null;
+                throw new CustomException("Collaborator not found");
 
             }
             catch (System.Exception)

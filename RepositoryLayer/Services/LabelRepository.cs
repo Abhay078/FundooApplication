@@ -1,4 +1,5 @@
 ﻿using CommonLayer.Model;
+using FundooNotesApplication;
 using Microsoft.EntityFrameworkCore.Internal;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
@@ -19,18 +20,29 @@ namespace RepositoryLayer.Services
         }
         public LabelEntity AddLabel(long UserId,LabelModel model)
         {
-            LabelEntity labelEntity= new LabelEntity();
-            var Check = context.Label.FirstOrDefault(o => o.LabelName.ToLower().Equals(model.LabelName.ToLower()) && o.NoteId==model.NoteId);
-            if(Check != null)
+            try
             {
-                return null;
+                LabelEntity labelEntity = new LabelEntity();
+                var Check = context.Label.FirstOrDefault(o => o.LabelName.ToLower().Equals(model.LabelName.ToLower()) && o.NoteId == model.NoteId);
+                if (Check != null)
+                {
+                    throw new CustomException("Label is already exists for same user");
+                }
+                labelEntity.UserId = UserId;
+                labelEntity.NoteId = model.NoteId;
+                labelEntity.LabelName = model.LabelName;
+                context.Add(labelEntity);
+                context.SaveChanges();
+                return labelEntity;
+
+
             }
-            labelEntity.UserId = UserId;
-            labelEntity.NoteId = model.NoteId;
-            labelEntity.LabelName = model.LabelName;
-            context.Add(labelEntity);
-            context.SaveChanges();
-            return labelEntity;
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
 
         }
         public IEnumerable<LabelEntity> GetAll(long UserId)
@@ -53,24 +65,34 @@ namespace RepositoryLayer.Services
             }
             else
             {
-                return null;
+                throw new KeyNotFoundException("LabelName not found");
             }
             
 
         }
         public bool DeleteLabel(string LabelName)
         {
-            var Check=context.Label.Where(o => o.LabelName.ToLower().Equals(LabelName.ToLower()));
-            if (Check.Any())
+            try
             {
-                context.Label.RemoveRange(Check);
-                context.SaveChanges();
-                return true;
+                var Check = context.Label.Where(o => o.LabelName.ToLower().Equals(LabelName.ToLower()));
+                if (Check.Any())
+                {
+                    context.Label.RemoveRange(Check);
+                    context.SaveChanges();
+                    return true;
+                }
+                else
+                {
+                    throw new KeyNotFoundException("Labelname not found");
+                }
+
             }
-            else
+            catch (Exception)
             {
-                return false;
+
+                throw;
             }
+            
         }
         public IEnumerable<LabelEntity> GetLabelByNoteId(long NoteId)
         {
@@ -79,7 +101,7 @@ namespace RepositoryLayer.Services
             {
                 return Check;
             }
-            return null;
+            throw new KeyNotFoundException("NoteId not found");
         }
     }
 }

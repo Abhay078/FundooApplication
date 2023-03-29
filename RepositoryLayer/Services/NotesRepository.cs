@@ -1,6 +1,7 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using CommonLayer.Model;
+using FundooNotesApplication;
 using Microsoft.AspNetCore.Http;
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
@@ -47,7 +48,8 @@ namespace RepositoryLayer.Services
                     return entity;
 
                 }
-                return null;
+                throw new CustomException("Database Connection Issue");
+
 
             }
             catch (Exception)
@@ -81,7 +83,7 @@ namespace RepositoryLayer.Services
                 {
                     return Check;
                 }
-                return null;
+                throw new CustomException("Given NoteId does not exists");
 
             }
             catch (Exception)
@@ -106,7 +108,7 @@ namespace RepositoryLayer.Services
 
 
                 }
-                return null;
+                throw new KeyNotFoundException("NoteId not found");
 
             }
             catch (Exception)
@@ -127,7 +129,7 @@ namespace RepositoryLayer.Services
                     context.SaveChanges();
                     return true;
                 }
-                return false;
+                throw new KeyNotFoundException("NoteId not found");
 
             }
             catch (Exception)
@@ -154,8 +156,9 @@ namespace RepositoryLayer.Services
                         Check.Archived = true;
                     }
                     context.SaveChanges();
+                    return Check;
                 }
-                return Check;
+                throw new KeyNotFoundException("NoteId not found");
 
             }
             catch (Exception)
@@ -182,8 +185,9 @@ namespace RepositoryLayer.Services
                         Check.Trash = true;
                     }
                     context.SaveChanges();
+                    return Check;
                 }
-                return Check;
+                throw new KeyNotFoundException("NoteId not found");
 
             }
             catch (Exception)
@@ -210,8 +214,10 @@ namespace RepositoryLayer.Services
                         Check.IsPinned = true;
                     }
                     context.SaveChanges();
+                    return Check;
                 }
-                return Check;
+                throw new KeyNotFoundException("NoteId not found");
+
 
             }
             catch (Exception)
@@ -232,7 +238,7 @@ namespace RepositoryLayer.Services
                     context.SaveChanges();
                     return Check;
                 }
-                return null;
+                throw new KeyNotFoundException("NoteId not found");
 
 
             }
@@ -269,7 +275,7 @@ namespace RepositoryLayer.Services
 
 
                 }
-                return null;
+                throw new KeyNotFoundException("NoteId not found");
 
 
 
@@ -285,7 +291,6 @@ namespace RepositoryLayer.Services
             try
             {
 
-                //(1+2)*3
                 var Check = context.Notes.Where(o => (o.Description.Contains(Keyword) || o.Title.Contains(Keyword)) && o.UserId == UserId).ToList();
                 if (Check.Count != 0)
                 {
@@ -296,7 +301,7 @@ namespace RepositoryLayer.Services
                 else
                 {
                     count = 0;
-                    return null;
+                    throw new CustomException("No Matching keyword Note is available");
 
                 }
 
@@ -320,7 +325,7 @@ namespace RepositoryLayer.Services
                 {
                     return Check;
                 }
-                return null;
+                throw new KeyNotFoundException("Note not found in this page");
 
             }
             catch (Exception)

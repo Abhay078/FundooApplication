@@ -1,6 +1,9 @@
 ﻿using CommonLayer.Model;
+using FundooNotesApplication;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+
 using RepositoryLayer.Entity;
 using RepositoryLayer.FundooDBContext;
 using RepositoryLayer.Interface;
@@ -14,8 +17,10 @@ namespace RepositoryLayer.Services
 {
     public class UserRepository : IUserRepository
     {
+
         private readonly FunContext context;
-        private IConfiguration _config;
+        private readonly IConfiguration _config;
+
         public UserRepository(FunContext context, IConfiguration config)
         {
             this.context = context;
@@ -33,53 +38,74 @@ namespace RepositoryLayer.Services
                 entity.Password = EncryptPassword(model.Password);
                 var Check = context.User.Add(entity);
                 context.SaveChanges();
+
                 if (Check != null)
                 {
+
                     return entity;
                 }
                 else
                 {
-                    return null;
+
+                    throw new CustomException("Database connection not stablished correctly");
+
+
                 }
 
             }
-            catch (Exception ex)
+            catch (CustomException)
             {
-                Console.WriteLine(ex.Message);
-                return null;
+
+
+                throw;
+
             }
 
         }
         public string EncryptPassword(string password)
         {
-            var PlainText = Encoding.UTF8.GetBytes(password);
-            var EncodedPass = Convert.ToBase64String(PlainText);
-            return EncodedPass;
+            try
+            {
+                var PlainText = Encoding.UTF8.GetBytes(password);
+                var EncodedPass = Convert.ToBase64String(PlainText);
+                return EncodedPass;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
         }
         public UserEntity Login(LoginModel model)
         {
             try
             {
+
                 var CheckEmail = context.User.FirstOrDefault(v => v.Email == model.Email);
                 if (CheckEmail != null)
                 {
                     var CheckPass = context.User.FirstOrDefault(v => v.Password == EncryptPassword(model.Password));
                     if (CheckPass != null)
                     {
+
                         return CheckEmail;
                     }
                     else
                     {
-                        return null;
+                        throw new CustomException("user not found");
+
+
                     }
                 }
                 return null;
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
-                return null;
+
+                throw;
             }
 
 
@@ -112,10 +138,10 @@ namespace RepositoryLayer.Services
                 return new JwtSecurityTokenHandler().WriteToken(token);
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.Message);
-                return null;
+
+                throw;
             }
 
         }
@@ -132,15 +158,19 @@ namespace RepositoryLayer.Services
                     var token = Generate(CheckEmail.Email, CheckEmail.UserId);
                     MSMQ msmq = new MSMQ();
                     msmq.sendData2Queue(token);
+
                     return token;
                 }
-                return null;
+
+                throw new CustomException("Email Not registered with us.. Retry with Registered one");
+
 
             }
             catch (Exception)
             {
 
                 throw;
+
             }
 
         }
@@ -158,17 +188,22 @@ namespace RepositoryLayer.Services
                     {
                         Check.Password = EncryptPassword(ResetModel.NewPassword);
                         context.SaveChanges();
+
                         return true;
                     }
 
-                }
-                return false;
+                    throw new CustomException("User Not Found");
 
+
+
+                }
+                throw new CustomException("Password Not Matches");
             }
-            catch (Exception)
+            catch (CustomException)
             {
 
                 throw;
+
             }
 
         }
