@@ -3,6 +3,7 @@ using ManagerLayer.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RepositoryLayer.Entity;
 using System;
 using System.Security.Claims;
@@ -13,12 +14,14 @@ namespace FundooNotesApplication.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private IConfiguration _config;
+        
         private readonly IUserManager manager;
-        public UserController(IConfiguration config, IUserManager manager)
+        private readonly ILogger<UserController> logger;
+        public UserController(IUserManager manager,ILogger<UserController> logger)
         {
-            _config = config;
+            
             this.manager = manager;
+            this.logger = logger;
         }
         [HttpPost]
         [Route("Register")]
@@ -39,8 +42,8 @@ namespace FundooNotesApplication.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                return null;
+                logger.LogError(ex.Message);
+                throw;
 
             }
 
@@ -67,8 +70,8 @@ namespace FundooNotesApplication.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-                return null;
+                logger.LogError(ex.Message);
+                throw;
 
             }
 
@@ -78,12 +81,22 @@ namespace FundooNotesApplication.Controllers
         [HttpPost("ForgetPassword")]
         public ActionResult ForgetPassword(string email)
         {
-            var CheckEmail = manager.ForgetPassword(email);
-            if (CheckEmail != null)
+            try
             {
-                return Ok(new ResponseModel<string> { Status = true, Message = "Reset Link Send Successfully" });
+                var CheckEmail = manager.ForgetPassword(email);
+                if (CheckEmail != null)
+                {
+                    return Ok(new ResponseModel<string> { Status = true, Message = "Reset Link Send Successfully" });
+                }
+                return BadRequest(new ResponseModel<string> { Status = false, Message = "Reset Link Not send" });
+
             }
-            return BadRequest(new ResponseModel<string> { Status = false, Message = "Reset Link Not send" });
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message);
+                throw;
+            }
+            
         }
         [Authorize]
         [HttpPost("ResetPassword")]
@@ -100,9 +113,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<bool> { Status = false, Message = "Reset Unsuccessful", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 

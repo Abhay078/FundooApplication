@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using System;
@@ -21,10 +22,12 @@ namespace FundooNotesApplication.Controllers
     {
         private readonly INoteManager manager;
         private readonly IDistributedCache distributedCache;
-        public NotesController(INoteManager manager, IDistributedCache distributedCache)
+        private readonly ILogger<NotesController> logger;
+        public NotesController(INoteManager manager, IDistributedCache distributedCache,ILogger<NotesController> logger)
         {
             this.manager = manager;
             this.distributedCache = distributedCache;
+            this.logger = logger;
 
         }
         [Authorize]
@@ -38,14 +41,15 @@ namespace FundooNotesApplication.Controllers
                 var Check = manager.CreateNote(model, Id);
                 if (Check != null)
                 {
+                    logger.LogInformation("Note is created successfully");
                     return Ok(new ResponseModel<NotesEntity> { Status = true, Message = "Note Created Successfully", Data = Check });
                 }
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Notes Not Created ", Data = Check });
 
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -79,15 +83,16 @@ namespace FundooNotesApplication.Controllers
 
                 if (Check.Any())
                 {
+
                     return Ok(Check);
                 }
 
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Failed to get Data" });
 
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -110,13 +115,13 @@ namespace FundooNotesApplication.Controllers
                 }
                 else
                 {
-                    Check = manager.GetNoteById(id, UserId);
+                    Check =manager.GetNoteById(id, UserId);
                     serializedList = JsonConvert.SerializeObject(Check);
                     redisList = Encoding.UTF8.GetBytes(serializedList);
                     var options = new DistributedCacheEntryOptions()
                         .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
                         .SetSlidingExpiration(TimeSpan.FromMinutes(1));
-                    distributedCache.Set(Key, redisList, options);
+                    await distributedCache.SetAsync(Key, redisList, options);
                 }
 
                 if (Check != null)
@@ -128,9 +133,9 @@ namespace FundooNotesApplication.Controllers
 
 
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -151,9 +156,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Updation failed", Data = Check });
 
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
         }
@@ -172,9 +177,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<string> { Status = false, Message = "Deletion Failed" });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -194,9 +199,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occurred", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -218,9 +223,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occurred", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -241,9 +246,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occurred", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -265,9 +270,9 @@ namespace FundooNotesApplication.Controllers
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occured", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
             
@@ -290,8 +295,9 @@ namespace FundooNotesApplication.Controllers
                 }
                 return BadRequest(new ResponseModel<NotesEntity> { Status = false, Message = "Some Error Occured", Data = Check });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex.Message);
                 throw;
 
             }
@@ -317,9 +323,9 @@ namespace FundooNotesApplication.Controllers
 
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
         }
@@ -343,9 +349,9 @@ namespace FundooNotesApplication.Controllers
                 }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
         }

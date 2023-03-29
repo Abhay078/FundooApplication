@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using System;
@@ -21,9 +22,11 @@ namespace FundooNotesApplication.Controllers
 
         private readonly ILabelManager manager;
         private readonly IDistributedCache distributedCache;
-        public LabelController(ILabelManager manager, IDistributedCache distributedCache)
+        private readonly ILogger<LabelController> logger;
+        public LabelController(ILabelManager manager, IDistributedCache distributedCache,ILogger<LabelController> logger)
         {
             this.distributedCache = distributedCache;
+            this.logger=logger;
             this.manager = manager;
         }
         [Authorize]
@@ -35,8 +38,10 @@ namespace FundooNotesApplication.Controllers
             {
                 long UserId = Convert.ToInt64(User.FindFirst("Id").Value);
                 var Check = manager.AddLabel(UserId, model);
+
                 if (Check != null)
                 {
+                    logger.LogInformation("Label is added to database successfully");
                     return Ok(new ResponseModel<LabelEntity> { Status = true, Message = "Label is created successfully", Data = Check });
                 }
                 else
@@ -46,9 +51,9 @@ namespace FundooNotesApplication.Controllers
                 }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -84,6 +89,7 @@ namespace FundooNotesApplication.Controllers
                 }
                 if (Check.Any())
                 {
+                    logger.LogInformation("All Labels are retrieved successfully");
                     return Ok(new ResponseModel<IEnumerable<LabelEntity>> { Status = true, Message = "All Label is Retrieved", Data = Check });
                 }
                 else
@@ -92,9 +98,9 @@ namespace FundooNotesApplication.Controllers
                 }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -108,14 +114,15 @@ namespace FundooNotesApplication.Controllers
                 var Check = manager.UpdateLabel(NoteId, LabelName, UpdatedLabelName);
                 if (Check != null)
                 {
+                    logger.LogInformation("Label is updated to database successfully");
                     return Ok(new ResponseModel<LabelEntity> { Status = true, Message = "Updation Successfull", Data = Check });
                 }
                 return BadRequest(new ResponseModel<LabelEntity> { Status = false, Message = "Updation Unsuccessfull", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -130,6 +137,7 @@ namespace FundooNotesApplication.Controllers
                 var Check = manager.DeleteLabel(labelName);
                 if (Check)
                 {
+                    logger.LogInformation("Label is deleted from database successfully");
                     return Ok(new ResponseModel<bool> { Status = true, Message = "Deletion of Label Successfull", Data = Check });
                 }
                 else
@@ -138,9 +146,9 @@ namespace FundooNotesApplication.Controllers
                 }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -154,6 +162,7 @@ namespace FundooNotesApplication.Controllers
                 var Check = manager.GetLabelByNoteId(NoteId);
                 if (Check != null)
                 {
+                    logger.LogInformation("Label is retrieved by note id successfully");
                     return Ok(new ResponseModel<IEnumerable<LabelEntity>> { Status = true, Message = "Label Found", Data = Check });
                 }
                 else
@@ -162,9 +171,9 @@ namespace FundooNotesApplication.Controllers
                 }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
             }
 

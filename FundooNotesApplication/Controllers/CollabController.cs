@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RepositoryLayer.Entity;
 using System;
@@ -23,67 +24,73 @@ namespace FundooNotesApplication.Controllers
         private readonly ICollabManager manager;
         private readonly IDistributedCache distributedCache;
         private readonly IBus bus;
+        private readonly ILogger<CollabController> logger;
+        
+        
 
-        public CollabController(ICollabManager manager, IDistributedCache distributedCache, IBus bus)
+        public CollabController(ICollabManager manager, IDistributedCache distributedCache, IBus bus, ILogger<CollabController> logger)
         {
             this.manager = manager;
             this.distributedCache = distributedCache;
             this.bus = bus;
+            this.logger = logger;
         }
         [Authorize]
         [HttpPost]
-        public ActionResult AddCollab(AddCollabModel model)
+        public async Task<IActionResult> AddCollab(AddCollabModel model)
         {
+            CollabEntity Check = null;
+           
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
-                var Check = manager.AddCollab(model, UserId);
-                if (Check != null)
+                Check = manager.AddCollab(model, UserId);
+               
+                if (Check != null && model != null)
                 {
-                    return Ok(new ResponseModel<CollabEntity> { Status = true, Message = "Collaborator is added Successfully", Data = Check });
+                    Uri url = new Uri("rabbitmq://localhost/CollabQueue");
+                    var endPoint = await bus.GetSendEndpoint(url);
+                    await endPoint.Send(model);
+                    logger.LogInformation("Collaborator is added successfully....");
+                    return Ok(new ResponseModel<CollabEntity> { Status = true, Message = "Collaborator is added Successfully and an email will be sent to collaborator", Data = Check });
                 }
-                return BadRequest(new ResponseModel<CollabEntity> { Status = false, Message = "Collaborator is not added", Data = Check });
+                return BadRequest(new ResponseModel<CollabEntity> { Status = false, Message = "collaborator is not added", Data = Check });
+
 
             }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-        }
-        [HttpPost("Add")]
-        public async Task<IActionResult> AddCollabWithEmail(AddCollabModel model)
-        {
-            if (model != null)
+            catch (CustomException ex)
             {
                 
-                Uri url = new Uri("rabbitmq://localhost/CollabQueue");
-                var endPoint = await bus.GetSendEndpoint(url);
-                await endPoint.Send(model);
-                return Ok(new ResponseModel<string> { Status = true, Message = "Adding Successfull and an email will be sent to collaborator"});
+                logger.LogError(ex.Message);
+                throw;
 
             }
-            return BadRequest(new ResponseModel<string> { Status = false, Message = "Adding Collaborator is failed " });
+
         }
+
         [Authorize]
         [HttpDelete("{NoteId}")]
-        public ActionResult DeleteCollab(long NoteId, string Email)
+        public IActionResult DeleteCollab(long NoteId, string Email)
         {
+            
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
                 var Check = manager.DeleteCollab(UserId, Email, NoteId);
                 if (Check != null)
                 {
+                    logger.LogInformation("Collaborator is deleted successfully");
                     return Ok(new ResponseModel<CollabEntity> { Status = true, Message = "Collaborator is deleted Successfully", Data = Check });
                 }
+
                 return BadRequest(new ResponseModel<CollabEntity> { Status = false, Message = "Deletion is failed", Data = Check });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                
 
+                logger.LogError(ex.Message);
                 throw;
             }
 
@@ -91,8 +98,9 @@ namespace FundooNotesApplication.Controllers
         }
         [Authorize]
         [HttpGet]
-        public ActionResult GetAllCollab()
+        public async Task<IActionResult> GetAllCollab()
         {
+            
             try
             {
                 var UserId = Convert.ToInt64(User.FindFirst("Id").Value);
@@ -103,31 +111,37 @@ namespace FundooNotesApplication.Controllers
                 var redisLabelList = distributedCache.Get(cacheKey);
                 if (redisLabelList != null)
                 {
+                    logger.LogInformation("Collab List is fetching from Cache");
                     serializedCollabList = Encoding.UTF8.GetString(redisLabelList);
                     Check = JsonConvert.DeserializeObject<IEnumerable<CollabEntity>>(serializedCollabList);
                 }
                 else
                 {
+                    logger.LogInformation("Collaborators are fetching from database");
                     Check = manager.GetAllCollab(UserId);
                     serializedCollabList = JsonConvert.SerializeObject(Check);
                     redisLabelList = Encoding.UTF8.GetBytes(serializedCollabList);
                     var options = new DistributedCacheEntryOptions()
                         .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
                         .SetSlidingExpiration(TimeSpan.FromMinutes(1));
-                    distributedCache.Set(cacheKey, redisLabelList, options);
+                    await distributedCache.SetAsync(cacheKey, redisLabelList, options);
 
                 }
                 if (Check.Any())
                 {
+                    logger.LogInformation("All Collaborator are fetched");
                     return Ok(Check);
                 }
+
+
                 return BadRequest(new ResponseModel<CollabEntity> { Status = false, Message = "No Collaborators exists" });
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                logger.LogError(ex.Message);
                 throw;
+
             }
 
         }
