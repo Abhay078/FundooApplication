@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundooNotesApplication", "FundooNotesApplication.csproj", "{DA706365-C741-4185-BE6D-67B13F349835}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FundooNotesApplication", "FundooNotesApplication.csproj", "{DA706365-C741-4185-BE6D-67B13F349835}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepositoryLayer", "..\RepositoryLayer\RepositoryLayer.csproj", "{C2A78510-B7E0-4C2D-91BC-7B65699E4225}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryLayer", "..\RepositoryLayer\RepositoryLayer.csproj", "{C2A78510-B7E0-4C2D-91BC-7B65699E4225}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagerLayer", "..\ManagerLayer\ManagerLayer.csproj", "{78E500F9-9369-4014-BD4C-2E9EE52FB739}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagerLayer", "..\ManagerLayer\ManagerLayer.csproj", "{78E500F9-9369-4014-BD4C-2E9EE52FB739}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonLayer", "..\CommonLayer\CommonLayer.csproj", "{120E719A-16D2-43AF-8271-527B31B8D860}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonLayer", "..\CommonLayer\CommonLayer.csproj", "{120E719A-16D2-43AF-8271-527B31B8D860}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddCollabConsumer", "..\AddCollabConsumer\AddCollabConsumer.csproj", "{3F30E090-BD7F-478F-92CD-79D890B67F1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{120E719A-16D2-43AF-8271-527B31B8D860}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{120E719A-16D2-43AF-8271-527B31B8D860}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{120E719A-16D2-43AF-8271-527B31B8D860}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F30E090-BD7F-478F-92CD-79D890B67F1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F30E090-BD7F-478F-92CD-79D890B67F1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F30E090-BD7F-478F-92CD-79D890B67F1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F30E090-BD7F-478F-92CD-79D890B67F1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
